@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const player2NameInput = document.getElementById('player2-name');
     const matchesToWinInput = document.getElementById('matches-to-win');
     const startGameButton = document.getElementById('start-game');
-
+    
     // DOM Elements - Game Screen
     const gameScreen = document.getElementById('game-screen');
     const gameBoard = document.getElementById('game-board');
@@ -20,7 +20,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const player2WinsDisplay = document.getElementById('player2-wins');
     const currentMatchDisplay = document.getElementById('current-match');
     const totalMatchesDisplay = document.getElementById('total-matches');
-
+    const liveHistoryList = document.getElementById('live-history-list');
+    const currentMovesCount = document.getElementById('current-moves-count');
+    
     // DOM Elements - Tournament Result Screen
     const tournamentResultScreen = document.getElementById('tournament-result');
     const tournamentWinnerName = document.getElementById('tournament-winner-name');
@@ -30,19 +32,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalMovesDisplay = document.getElementById('total-moves');
     const averageMovesDisplay = document.getElementById('average-moves');
     const newTournamentButton = document.getElementById('new-tournament');
-
+    
     // Game model constants
     const BOARD_SIZE = 8;
     const CELLS_TO_WIN = 4;
     const PLAYER_X = 'x';
     const PLAYER_O = 'o';
-
+    
     // Game state
     let board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(''));
     let currentPlayer = PLAYER_X;
     let gameActive = false;
     let moveCount = 0;
-
+    
     // Player and Tournament state
     let player1Name = 'Jugador 1';
     let player2Name = 'Jugador 2';
@@ -51,9 +53,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let player2Wins = 0;
     let currentMatch = 1;
     let tournamentActive = false;
-
+    
     // Match history
     let matchHistory = [];
+    let liveHistory = []; // Para el historial en tiempo real
     
     // Setup game event listeners
     startGameButton.addEventListener('click', startTournament);
@@ -68,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupScreen.classList.remove('hidden');
         gameScreen.classList.add('hidden');
         tournamentResultScreen.classList.add('hidden');
-
+        
         // Reset tournament state
         player1Wins = 0;
         player2Wins = 0;
@@ -109,12 +112,15 @@ document.addEventListener('DOMContentLoaded', () => {
         currentPlayer = PLAYER_X;
         moveCount = 0;
         gameActive = true;
+        liveHistory = []; // Limpiar historial en vivo
         
         // Update UI
         moveCounter.textContent = `Movimientos: ${moveCount}`;
+        currentMovesCount.textContent = moveCount;
         updatePlayerTurn();
         gameResultDisplay.textContent = '';
         createBoard();
+        updateLiveHistory(); // Actualizar el historial en vivo
     }
     
     // Reset current match
@@ -149,9 +155,20 @@ document.addEventListener('DOMContentLoaded', () => {
         board[row][col] = currentPlayer;
         moveCount++;
         
+        // Registrar el movimiento en el historial en vivo
+        const moveEntry = {
+            player: currentPlayer,
+            playerName: currentPlayer === PLAYER_X ? player1Name : player2Name,
+            position: { row, col },
+            moveNumber: moveCount
+        };
+        liveHistory.push(moveEntry);
+        
         // Update the UI
         updateCellUI(row, col);
         moveCounter.textContent = `Movimientos: ${moveCount}`;
+        currentMovesCount.textContent = moveCount;
+        updateLiveHistory();
         
         // Check for win or draw
         if (checkWin(row, col)) {
@@ -176,6 +193,41 @@ document.addEventListener('DOMContentLoaded', () => {
         const playerName = currentPlayer === PLAYER_X ? player1Name : player2Name;
         currentPlayerName.textContent = playerName;
         playerTurnDisplay.innerHTML = `Turno: <span id="current-player-name">${playerName}</span> (${currentPlayer.toUpperCase()})`;
+    }
+    
+    // Update the live history display
+    function updateLiveHistory() {
+        liveHistoryList.innerHTML = '';
+        
+        if (liveHistory.length === 0) {
+            const noMovesMsg = document.createElement('div');
+            noMovesMsg.classList.add('no-moves-message');
+            noMovesMsg.textContent = 'Aún no hay movimientos en esta partida';
+            liveHistoryList.appendChild(noMovesMsg);
+            return;
+        }
+        
+        liveHistory.forEach((move, index) => {
+            const moveEntry = document.createElement('div');
+            moveEntry.classList.add('match-entry');
+            
+            // Añadir clase según el jugador
+            if (move.player === PLAYER_X) {
+                moveEntry.classList.add('player-x-win');
+            } else {
+                moveEntry.classList.add('player-o-win');
+            }
+            
+            moveEntry.innerHTML = `
+                <div>${index + 1}. ${move.playerName} (${move.player.toUpperCase()})</div>
+                <div>Fila ${move.position.row + 1}, Col ${move.position.col + 1}</div>
+            `;
+            
+            liveHistoryList.appendChild(moveEntry);
+        });
+        
+        // Hacer scroll automático al último movimiento
+        liveHistoryList.scrollTop = liveHistoryList.scrollHeight;
     }
     
     // Check if a player has won
@@ -241,20 +293,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // End the match and update tournament status
     function endMatch(isDraw, moves) {
         gameActive = false;
-
+        
         // Add match to history
         const matchEntry = {
             matchNumber: currentMatch,
             moves: moves,
             result: isDraw ? 'draw' : (currentPlayer === PLAYER_X ? 'player1' : 'player2'),
             player1: player1Name,
-            player2: player2Name
+            player2: player2Name,
+            moveHistory: [...liveHistory] // Guardar historia de movimientos
         };
-
+        
         matchHistory.push(matchEntry);
-
+        
         if (isDraw) {
             gameResultDisplay.textContent = '¡Empate!';
+            
+            // Agregar resultado al historial en vivo
+            const drawResult = document.createElement('div');
+            drawResult.classList.add('match-entry', 'draw', 'result-entry');
+            drawResult.innerHTML = '<div>¡Empate!</div>';
+            liveHistoryList.appendChild(drawResult);
+            
             // In case of a draw, start a new match without updating scores
             setTimeout(() => {
                 currentMatch++;
@@ -263,7 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 2000);
         } else {
             const winnerName = currentPlayer === PLAYER_X ? player1Name : player2Name;
-
+            
             // Update win counts
             if (currentPlayer === PLAYER_X) {
                 player1Wins++;
@@ -272,10 +332,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 player2Wins++;
                 player2WinsDisplay.textContent = player2Wins;
             }
-
+            
             // Display winner with move count
             gameResultDisplay.textContent = `¡${winnerName} ha ganado en ${moves} movimientos!`;
-
+            
+            // Agregar resultado al historial en vivo
+            const winResult = document.createElement('div');
+            winResult.classList.add('match-entry', 'result-entry');
+            if (currentPlayer === PLAYER_X) {
+                winResult.classList.add('player-x-win');
+            } else {
+                winResult.classList.add('player-o-win');
+            }
+            winResult.innerHTML = `<div>¡${winnerName} ha ganado en ${moves} movimientos!</div>`;
+            liveHistoryList.appendChild(winResult);
+            
             // Check if tournament is over
             if (player1Wins >= matchesToWin || player2Wins >= matchesToWin) {
                 endTournament();
@@ -295,7 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             gameScreen.classList.add('hidden');
             tournamentResultScreen.classList.remove('hidden');
-
+            
             // Determine tournament winner
             let winnerName;
             if (player1Wins > player2Wins) {
@@ -303,31 +374,31 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 winnerName = player2Name;
             }
-
+            
             // Update tournament result display
             tournamentWinnerName.textContent = winnerName;
             finalScorePlayer1.textContent = player1Wins;
             finalScorePlayer2.textContent = player2Wins;
-
+            
             // Display match history
             displayMatchHistory();
-
+            
             // Reset tournament status
             tournamentActive = false;
         }, 2000);
     }
-
+    
     // Display match history in the result screen
     function displayMatchHistory() {
         matchHistoryList.innerHTML = '';
-
+        
         let totalMoves = 0;
         let completedMatches = 0;
-
+        
         matchHistory.forEach(match => {
             const matchEntryElement = document.createElement('div');
             matchEntryElement.classList.add('match-entry');
-
+            
             // Add class based on result
             if (match.result === 'draw') {
                 matchEntryElement.classList.add('draw');
@@ -336,7 +407,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 matchEntryElement.classList.add('player-o-win');
             }
-
+            
             // Match info
             let resultText;
             if (match.result === 'draw') {
@@ -350,15 +421,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 totalMoves += match.moves;
                 completedMatches++;
             }
-
+            
             matchEntryElement.innerHTML = `
                 <div>Partida ${match.matchNumber}: ${resultText}</div>
                 <div>${match.result !== 'draw' ? match.moves + ' movimientos' : '-'}</div>
             `;
-
+            
             matchHistoryList.appendChild(matchEntryElement);
         });
-
+        
         // Update statistics
         totalMovesDisplay.textContent = totalMoves;
         averageMovesDisplay.textContent = completedMatches > 0

@@ -49,15 +49,31 @@
             </div>
         </div>
 
-        <div class="game-info">
-            <div id="move-counter" class="move-counter">Movimientos: 0</div>
-            <div id="player-turn" class="player-turn">Turno: <span id="current-player-name">Jugador 1</span> (X)</div>
-            <button id="reset-button" class="reset-button">Reiniciar Partida</button>
+        <div class="game-layout">
+            <div class="game-column">
+                <div class="game-info">
+                    <div id="move-counter" class="move-counter">Movimientos: 0</div>
+                    <div id="player-turn" class="player-turn">Turno: <span id="current-player-name">Jugador 1</span> (X)</div>
+                    <button id="reset-button" class="reset-button">Reiniciar Partida</button>
+                </div>
+
+                <div id="game-board" class="game-board"></div>
+
+                <div id="game-result" class="game-result"></div>
+            </div>
+
+            <div class="history-column">
+                <div class="in-game-history">
+                    <h3>Historial de Juego</h3>
+                    <div id="live-history-list" class="match-history-list live-history">
+                        <!-- El historial de la partida actual se generará dinámicamente aquí -->
+                    </div>
+                    <div class="history-stats">
+                        <div>Partida actual: <span id="current-moves-count">0</span> movimientos</div>
+                    </div>
+                </div>
+            </div>
         </div>
-
-        <div id="game-board" class="game-board"></div>
-
-        <div id="game-result" class="game-result"></div>
     </div>
 
     <!-- Pantalla final del torneo -->
