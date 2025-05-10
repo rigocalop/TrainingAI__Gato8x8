@@ -1,0 +1,99 @@
+Este archivo describe el diagrama de arquitectura para el sistema de LLM especializado en Gato 8x8.
+
++-------------------------------------------------------------------------+
+|                                                                         |
+|                       ARQUITECTURA DEL SISTEMA                          |
+|                                                                         |
++-------------------------------------------------------------------------+
+
++----------------+        +----------------+        +----------------+
+|                |        |                |        |                |
+| INTERFAZ DE    | <----> |  MOTOR DE      | <----> | ALMACENAMIENTO |
+| JUEGO EXISTENTE|        |  INFERENCIA    |        | Y ESTADÍSTICAS |
+|                |        |                |        |                |
++----------------+        +-------+--------+        +----------------+
+                                 |
+                                 |
+                                 v
++-------------------------------------------------------------------------+
+|                                                                         |
+|                          NÚCLEO DEL SISTEMA                             |
+|                                                                         |
+|  +----------------+   +----------------+   +----------------+           |
+|  |                |   |                |   |                |           |
+|  | MÓDULO DE      |   |   MODELO LLM   |   | MÓDULO DE      |           |
+|  | REPRESENTACIÓN |-->| ESPECIALIZADO  |-->| VALORACIÓN     |           |
+|  | DEL TABLERO    |   |                |   | DE POSICIÓN    |           |
+|  |                |   |                |   |                |           |
+|  +----------------+   +----------------+   +-------+--------+           |
+|                                                    |                    |
+|                                                    v                    |
+|                                       +------------------------+        |
+|                                       |                        |        |
+|                                       |   MOTOR DE BÚSQUEDA    |        |
+|                                       |   (MCTS + Alpha-Beta)  |        |
+|                                       |                        |        |
+|                                       +------------------------+        |
+|                                                                         |
++-------------------------------------------------------------------------+
+                                 |
+                                 v
++-------------------------------------------------------------------------+
+|                                                                         |
+|                       SISTEMA DE ENTRENAMIENTO                          |
+|                                                                         |
+|  +----------------+   +----------------+   +----------------+           |
+|  |                |   |                |   |                |           |
+|  | GENERACIÓN DE  |   | ENTRENAMIENTO  |   | EVALUACIÓN Y   |           |
+|  | DATOS          |-->| POR IMITACIÓN  |-->| AUTOJUEGO      |           |
+|  |                |   | Y REFUERZO     |   |                |           |
+|  +----------------+   +----------------+   +----------------+           |
+|                                                                         |
++-------------------------------------------------------------------------+
+
+Flujo de datos:
+
+1. El juego envía el estado actual del tablero al motor de inferencia.
+
+2. El módulo de representación convierte el estado del tablero en un formato 
+   que el LLM puede procesar (notación algebraica, tensores, etc.).
+
+3. El modelo LLM especializado analiza el estado y genera:
+   - Distribución de probabilidad sobre posibles movimientos (política)
+   - Evaluación de la posición actual (valor)
+   - Explicación en lenguaje natural del análisis
+
+4. El módulo de valoración refina la evaluación combinando:
+   - Salida del LLM
+   - Evaluación heurística basada en reglas del juego
+   - Patrones críticos y amenazas
+
+5. El motor de búsqueda utiliza estos componentes para:
+   - Explorar posibles secuencias de movimientos (MCTS)
+   - Analizar posiciones tácticas críticas (Alpha-Beta)
+   - Seleccionar el mejor movimiento
+
+6. El motor de inferencia devuelve al juego:
+   - El movimiento seleccionado
+   - Confianza/certeza de la evaluación
+   - Explicación del razonamiento
+
+7. El sistema de almacenamiento guarda:
+   - Historial de partidas
+   - Decisiones tomadas por el LLM
+   - Estadísticas de rendimiento
+
+8. El sistema de entrenamiento usa estos datos para:
+   - Generar conjuntos de entrenamiento mejorados
+   - Refinar el modelo mediante refuerzo
+   - Evaluar nuevas versiones del modelo
+
+Flujos adicionales:
+
+A. Evaluación de partidas completas:
+   El usuario puede enviar una partida completa para análisis, recibiendo
+   comentarios sobre momentos críticos y sugerencias de mejora.
+
+B. Actualización del modelo:
+   Nuevas versiones del modelo entrenadas con datos más recientes se
+   implementan periódicamente tras superar evaluaciones de rendimiento.
