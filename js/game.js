@@ -53,10 +53,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let player2Wins = 0;
     let currentMatch = 1;
     let tournamentActive = false;
+    let tournamentId = null;
     
     // Match history
     let matchHistory = [];
     let liveHistory = []; // Para el historial en tiempo real
+    let playerStats = {}; // Estadísticas de jugadores
     
     // Setup game event listeners
     startGameButton.addEventListener('click', startTournament);
@@ -80,12 +82,138 @@ document.addEventListener('DOMContentLoaded', () => {
         matchHistory = [];
     }
     
+    // Generate a unique ID
+    function generateUniqueId() {
+        return Date.now().toString(36) + Math.random().toString(36).substring(2);
+    }
+    
+    // Save match history to a file
+    function saveMatchHistory(match) {
+        const filename = `game_history/match_${match.matchNumber}_${tournamentId}.json`;
+        const matchData = JSON.stringify(match, null, 2);
+        
+        try {
+            // En un entorno real, aquí usaríamos fetch o XMLHttpRequest para enviar al servidor
+            // Para la demo, simulamos guardarlo localmente (usando localStorage)
+            localStorage.setItem(filename, matchData);
+            console.log(`Match history saved to ${filename}`);
+            return true;
+        } catch (error) {
+            console.error('Error saving match history:', error);
+            return false;
+        }
+    }
+    
+    // Save player statistics
+    function savePlayerStats() {
+        const filename = `player_stats/stats_${tournamentId}.json`;
+        const statsData = JSON.stringify(playerStats, null, 2);
+        
+        try {
+            // En un entorno real, aquí usaríamos fetch o XMLHttpRequest para enviar al servidor
+            // Para la demo, simulamos guardarlo localmente (usando localStorage)
+            localStorage.setItem(filename, statsData);
+            console.log(`Player stats saved to ${filename}`);
+            return true;
+        } catch (error) {
+            console.error('Error saving player stats:', error);
+            return false;
+        }
+    }
+    
+    // Update player statistics
+    function updatePlayerStats(match) {
+        // Initialize player stats if they don't exist
+        if (!playerStats[player1Name]) {
+            playerStats[player1Name] = {
+                matches: 0,
+                wins: 0,
+                losses: 0,
+                draws: 0,
+                totalMoves: 0,
+                avgMovesPerWin: 0
+            };
+        }
+        
+        if (!playerStats[player2Name]) {
+            playerStats[player2Name] = {
+                matches: 0,
+                wins: 0,
+                losses: 0,
+                draws: 0,
+                totalMoves: 0,
+                avgMovesPerWin: 0
+            };
+        }
+        
+        // Update statistics based on match result
+        if (match.result === 'draw') {
+            playerStats[player1Name].matches++;
+            playerStats[player1Name].draws++;
+            
+            playerStats[player2Name].matches++;
+            playerStats[player2Name].draws++;
+        } else if (match.result === 'player1') {
+            playerStats[player1Name].matches++;
+            playerStats[player1Name].wins++;
+            playerStats[player1Name].totalMoves += match.moves;
+            
+            playerStats[player2Name].matches++;
+            playerStats[player2Name].losses++;
+            
+            // Update average moves per win
+            if (playerStats[player1Name].wins > 0) {
+                playerStats[player1Name].avgMovesPerWin = 
+                    Math.round((playerStats[player1Name].totalMoves / playerStats[player1Name].wins) * 10) / 10;
+            }
+        } else { // player2 win
+            playerStats[player2Name].matches++;
+            playerStats[player2Name].wins++;
+            playerStats[player2Name].totalMoves += match.moves;
+            
+            playerStats[player1Name].matches++;
+            playerStats[player1Name].losses++;
+            
+            // Update average moves per win
+            if (playerStats[player2Name].wins > 0) {
+                playerStats[player2Name].avgMovesPerWin = 
+                    Math.round((playerStats[player2Name].totalMoves / playerStats[player2Name].wins) * 10) / 10;
+            }
+        }
+        
+        // Save updated statistics
+        savePlayerStats();
+    }
+    
     // Function to start tournament
     function startTournament() {
+        // Generate a unique tournament ID
+        tournamentId = generateUniqueId();
+        
         // Get player names and matches to win
         player1Name = player1NameInput.value.trim() || 'Jugador 1';
         player2Name = player2NameInput.value.trim() || 'Jugador 2';
         matchesToWin = parseInt(matchesToWinInput.value) || 3;
+        
+        // Initialize player statistics
+        playerStats = {
+            [player1Name]: {
+                matches: 0,
+                wins: 0,
+                losses: 0,
+                draws: 0,
+                totalMoves: 0,
+                avgMovesPerWin: 0
+            },
+            [player2Name]: {
+                matches: 0,
+                wins: 0,
+                losses: 0,
+                draws: 0,
+                totalMoves: 0,
+                avgMovesPerWin: 0
+            }
+        };
         
         // Update displays
         player1NameDisplay.textContent = player1Name;
@@ -128,20 +256,53 @@ document.addEventListener('DOMContentLoaded', () => {
         startMatch();
     }
     
-    // Create the game board UI
+    // Create the game board UI with chess-like coordinates
     function createBoard() {
+        // Clear the board
         gameBoard.innerHTML = '';
+        const columnCoordinates = document.getElementById('column-coordinates');
+        const rowCoordinates = document.getElementById('row-coordinates');
+        columnCoordinates.innerHTML = '';
+        rowCoordinates.innerHTML = '';
         
+        // Create column coordinates (A-H)
+        for (let col = 0; col < BOARD_SIZE; col++) {
+            const colCoord = document.createElement('div');
+            colCoord.classList.add('board-coordinates', 'column-coordinate');
+            colCoord.style.left = `calc(${col} * var(--cell-size) + ${col} * 2px + var(--cell-size) / 2)`;
+            colCoord.textContent = String.fromCharCode(65 + col); // A, B, C, etc.
+            columnCoordinates.appendChild(colCoord);
+        }
+        
+        // Create row coordinates (1-8)
+        for (let row = 0; row < BOARD_SIZE; row++) {
+            const rowCoord = document.createElement('div');
+            rowCoord.classList.add('board-coordinates', 'row-coordinate');
+            rowCoord.style.top = `calc(${row} * var(--cell-size) + ${row} * 2px + var(--cell-size) / 2)`;
+            rowCoord.textContent = BOARD_SIZE - row; // 8, 7, 6, etc. (inverted for chess-like coordinates)
+            rowCoordinates.appendChild(rowCoord);
+        }
+        
+        // Create the cells
         for (let row = 0; row < BOARD_SIZE; row++) {
             for (let col = 0; col < BOARD_SIZE; col++) {
                 const cell = document.createElement('div');
                 cell.classList.add('cell');
                 cell.dataset.row = row;
                 cell.dataset.col = col;
+                // Add algebraic notation as data attribute
+                cell.dataset.algebraic = getAlgebraicNotation(row, col);
                 cell.addEventListener('click', () => handleCellClick(row, col));
                 gameBoard.appendChild(cell);
             }
         }
+    }
+    
+    // Convert row, col to algebraic notation (e.g., A8, B3, etc.)
+    function getAlgebraicNotation(row, col) {
+        const file = String.fromCharCode(65 + col); // Column (A-H)
+        const rank = BOARD_SIZE - row; // Row (1-8, inverted)
+        return file + rank;
     }
     
     // Handle cell click
@@ -155,12 +316,17 @@ document.addEventListener('DOMContentLoaded', () => {
         board[row][col] = currentPlayer;
         moveCount++;
         
+        // Get algebraic notation for this move
+        const algebraicNotation = getAlgebraicNotation(row, col);
+        
         // Registrar el movimiento en el historial en vivo
         const moveEntry = {
             player: currentPlayer,
             playerName: currentPlayer === PLAYER_X ? player1Name : player2Name,
             position: { row, col },
-            moveNumber: moveCount
+            algebraic: algebraicNotation,
+            moveNumber: moveCount,
+            timestamp: new Date().toISOString()
         };
         liveHistory.push(moveEntry);
         
@@ -220,7 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             moveEntry.innerHTML = `
                 <div>${index + 1}. ${move.playerName} (${move.player.toUpperCase()})</div>
-                <div>Fila ${move.position.row + 1}, Col ${move.position.col + 1}</div>
+                <div>${move.algebraic}</div>
             `;
             
             liveHistoryList.appendChild(moveEntry);
@@ -294,17 +460,29 @@ document.addEventListener('DOMContentLoaded', () => {
     function endMatch(isDraw, moves) {
         gameActive = false;
         
-        // Add match to history
+        // Add match to history with detailed information
         const matchEntry = {
             matchNumber: currentMatch,
+            tournamentId: tournamentId,
             moves: moves,
             result: isDraw ? 'draw' : (currentPlayer === PLAYER_X ? 'player1' : 'player2'),
             player1: player1Name,
             player2: player2Name,
-            moveHistory: [...liveHistory] // Guardar historia de movimientos
+            winner: isDraw ? null : (currentPlayer === PLAYER_X ? player1Name : player2Name),
+            moveHistory: [...liveHistory],
+            startTime: liveHistory.length > 0 ? liveHistory[0].timestamp : null,
+            endTime: new Date().toISOString(),
+            boardSize: BOARD_SIZE,
+            connectToWin: CELLS_TO_WIN
         };
         
         matchHistory.push(matchEntry);
+        
+        // Save match history to file
+        saveMatchHistory(matchEntry);
+        
+        // Update player statistics
+        updatePlayerStats(matchEntry);
         
         if (isDraw) {
             gameResultDisplay.textContent = '¡Empate!';
@@ -383,6 +561,25 @@ document.addEventListener('DOMContentLoaded', () => {
             // Display match history
             displayMatchHistory();
             
+            // Save final tournament results
+            const tournamentSummary = {
+                tournamentId: tournamentId,
+                startTime: matchHistory[0].startTime,
+                endTime: new Date().toISOString(),
+                player1: player1Name,
+                player2: player2Name,
+                winner: winnerName,
+                finalScore: {
+                    [player1Name]: player1Wins,
+                    [player2Name]: player2Wins
+                },
+                matchCount: currentMatch,
+                matches: matchHistory
+            };
+            
+            // Save tournament summary
+            localStorage.setItem(`game_history/tournament_${tournamentId}.json`, JSON.stringify(tournamentSummary, null, 2));
+            
             // Reset tournament status
             tournamentActive = false;
         }, 2000);
@@ -435,5 +632,64 @@ document.addEventListener('DOMContentLoaded', () => {
         averageMovesDisplay.textContent = completedMatches > 0
             ? Math.round((totalMoves / completedMatches) * 10) / 10
             : 0;
+            
+        // Display player statistics
+        displayPlayerStats();
+    }
+    
+    // Display player statistics in the tournament result screen
+    function displayPlayerStats() {
+        // Add a container for player stats if it doesn't exist
+        let playerStatsContainer = document.getElementById('player-stats-container');
+        if (!playerStatsContainer) {
+            playerStatsContainer = document.createElement('div');
+            playerStatsContainer.id = 'player-stats-container';
+            playerStatsContainer.className = 'match-history';
+            playerStatsContainer.innerHTML = '<h3>Estadísticas de Jugadores</h3>';
+            
+            // Add it after the match history
+            const matchHistoryElement = document.querySelector('.match-history');
+            matchHistoryElement.parentNode.insertBefore(playerStatsContainer, matchHistoryElement.nextSibling);
+        } else {
+            playerStatsContainer.innerHTML = '<h3>Estadísticas de Jugadores</h3>';
+        }
+        
+        // Create stats display for each player
+        const statsListElement = document.createElement('div');
+        statsListElement.className = 'player-stats-list';
+        
+        // Add player 1 stats
+        const player1StatsElement = document.createElement('div');
+        player1StatsElement.className = 'player-stats player-x-win';
+        player1StatsElement.innerHTML = `
+            <h4>${player1Name}</h4>
+            <div class="stats-grid">
+                <div>Partidas Jugadas: ${playerStats[player1Name].matches}</div>
+                <div>Victorias: ${playerStats[player1Name].wins}</div>
+                <div>Derrotas: ${playerStats[player1Name].losses}</div>
+                <div>Empates: ${playerStats[player1Name].draws}</div>
+                <div>Movimientos Totales: ${playerStats[player1Name].totalMoves}</div>
+                <div>Prom. Movimientos/Victoria: ${playerStats[player1Name].avgMovesPerWin}</div>
+            </div>
+        `;
+        
+        // Add player 2 stats
+        const player2StatsElement = document.createElement('div');
+        player2StatsElement.className = 'player-stats player-o-win';
+        player2StatsElement.innerHTML = `
+            <h4>${player2Name}</h4>
+            <div class="stats-grid">
+                <div>Partidas Jugadas: ${playerStats[player2Name].matches}</div>
+                <div>Victorias: ${playerStats[player2Name].wins}</div>
+                <div>Derrotas: ${playerStats[player2Name].losses}</div>
+                <div>Empates: ${playerStats[player2Name].draws}</div>
+                <div>Movimientos Totales: ${playerStats[player2Name].totalMoves}</div>
+                <div>Prom. Movimientos/Victoria: ${playerStats[player2Name].avgMovesPerWin}</div>
+            </div>
+        `;
+        
+        statsListElement.appendChild(player1StatsElement);
+        statsListElement.appendChild(player2StatsElement);
+        playerStatsContainer.appendChild(statsListElement);
     }
 });
