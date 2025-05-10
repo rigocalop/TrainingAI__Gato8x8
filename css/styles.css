@@ -229,7 +229,74 @@ h2 {
 
 .final-score {
     font-size: 1.5rem;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
+}
+
+/* Match history styles */
+.match-history {
+    margin: 20px 0;
+    padding: 15px;
+    background-color: #f5f5f5;
+    border-radius: 8px;
+    text-align: left;
+}
+
+.match-history h3 {
+    font-size: 1.3rem;
+    color: #2c3e50;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.match-history-list {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: white;
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
+}
+
+.match-entry {
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.match-entry:nth-child(odd) {
+    background-color: #f0f8ff;
+}
+
+.match-entry:last-child {
+    margin-bottom: 0;
+}
+
+.match-entry.player-x-win {
+    border-left: 4px solid var(--primary-color);
+}
+
+.match-entry.player-o-win {
+    border-left: 4px solid var(--secondary-color);
+}
+
+.match-entry.draw {
+    border-left: 4px solid #95a5a6;
+}
+
+.history-summary {
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-top: 15px;
+    padding: 10px;
+    background-color: white;
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
 }
 
 /* Utility classes */
