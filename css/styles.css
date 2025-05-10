@@ -3,6 +3,7 @@
     --mark-size: calc(var(--cell-size) * 0.8);
     --primary-color: #3498db;
     --secondary-color: #e74c3c;
+    --success-color: #2ecc71;
     --background-color: #f9f9f9;
     --border-color: #ddd;
 }
@@ -26,6 +27,8 @@ body {
 .container {
     text-align: center;
     margin: 20px;
+    max-width: 800px;
+    width: 100%;
 }
 
 h1 {
@@ -39,21 +42,9 @@ h2 {
     font-size: 1.2rem;
 }
 
-.game-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
-.player-turn {
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: #2c3e50;
-}
-
-.reset-button {
-    background-color: #3498db;
+/* Common button styles */
+.reset-button, .start-button {
+    background-color: var(--primary-color);
     color: white;
     border: none;
     padding: 10px 15px;
@@ -63,8 +54,98 @@ h2 {
     transition: background-color 0.3s;
 }
 
-.reset-button:hover {
+.reset-button:hover, .start-button:hover {
     background-color: #2980b9;
+}
+
+.start-button {
+    font-size: 1.2rem;
+    padding: 12px 20px;
+    margin-top: 20px;
+    background-color: var(--success-color);
+}
+
+.start-button:hover {
+    background-color: #27ae60;
+}
+
+/* Setup screen styles */
+.setup-screen {
+    padding: 20px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.setup-form {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.form-group {
+    margin-bottom: 15px;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-size: 1rem;
+}
+
+/* Game screen styles */
+.game-screen {
+    padding: 20px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.score-board {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: #f5f5f5;
+    border-radius: 5px;
+}
+
+.player-score {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.matches-counter {
+    font-size: 1.1rem;
+    color: #7f8c8d;
+}
+
+.game-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.move-counter {
+    font-size: 1.1rem;
+    color: #2c3e50;
+}
+
+.player-turn {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #2c3e50;
 }
 
 .game-board {
@@ -131,31 +212,66 @@ h2 {
     height: 1.5rem;
 }
 
+/* Tournament result styles */
+.tournament-result {
+    padding: 30px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.winner-display {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--success-color);
+    margin: 20px 0;
+}
+
+.final-score {
+    font-size: 1.5rem;
+    margin-bottom: 30px;
+}
+
+/* Utility classes */
+.hidden {
+    display: none;
+}
+
 /* Responsive adjustments */
-@media (max-width: 600px) {
+@media (max-width: 700px) {
     :root {
         --cell-size: 40px;
     }
-    
+
     h1 {
         font-size: 1.5rem;
     }
-    
+
     h2 {
         font-size: 1rem;
     }
-    
-    .player-turn {
+
+    .player-turn, .player-score {
         font-size: 1rem;
     }
-    
+
     .reset-button {
         padding: 8px 12px;
         font-size: 0.9rem;
     }
+
+    .game-info {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .score-board {
+        flex-direction: column;
+        gap: 10px;
+    }
 }
 
-@media (max-width: 400px) {
+@media (max-width: 480px) {
     :root {
         --cell-size: 30px;
     }

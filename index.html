@@ -7,20 +7,71 @@
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <div class="container">
+    <!-- Pantalla de configuración inicial -->
+    <div id="setup-screen" class="container setup-screen">
         <h1>Juego del Gato 8x8</h1>
         <h2>Conecta 4 para ganar</h2>
-        
-        <div class="game-info">
-            <div id="player-turn" class="player-turn">Turno: Jugador X</div>
-            <button id="reset-button" class="reset-button">Reiniciar Juego</button>
+
+        <div class="setup-form">
+            <div class="form-group">
+                <label for="player1-name">Nombre Jugador 1 (X):</label>
+                <input type="text" id="player1-name" value="Jugador 1" maxlength="20">
+            </div>
+
+            <div class="form-group">
+                <label for="player2-name">Nombre Jugador 2 (O):</label>
+                <input type="text" id="player2-name" value="Jugador 2" maxlength="20">
+            </div>
+
+            <div class="form-group">
+                <label for="matches-to-win">Partidas para ganar:</label>
+                <input type="number" id="matches-to-win" min="1" max="10" value="3">
+            </div>
+
+            <button id="start-game" class="start-button">¡Comenzar Juego!</button>
         </div>
-        
+    </div>
+
+    <!-- Pantalla del juego -->
+    <div id="game-screen" class="container game-screen hidden">
+        <h1>Juego del Gato 8x8</h1>
+        <h2>Conecta 4 para ganar</h2>
+
+        <div class="score-board">
+            <div id="player1-score" class="player-score">
+                <span id="player1-name-display">Jugador 1</span>: <span id="player1-wins">0</span>
+            </div>
+            <div id="matches-counter" class="matches-counter">
+                Partida <span id="current-match">1</span> de <span id="total-matches">3</span>
+            </div>
+            <div id="player2-score" class="player-score">
+                <span id="player2-name-display">Jugador 2</span>: <span id="player2-wins">0</span>
+            </div>
+        </div>
+
+        <div class="game-info">
+            <div id="move-counter" class="move-counter">Movimientos: 0</div>
+            <div id="player-turn" class="player-turn">Turno: <span id="current-player-name">Jugador 1</span> (X)</div>
+            <button id="reset-button" class="reset-button">Reiniciar Partida</button>
+        </div>
+
         <div id="game-board" class="game-board"></div>
-        
+
         <div id="game-result" class="game-result"></div>
     </div>
-    
+
+    <!-- Pantalla final del torneo -->
+    <div id="tournament-result" class="container tournament-result hidden">
+        <h1>¡Fin del Torneo!</h1>
+        <div id="winner-display" class="winner-display">
+            <span id="tournament-winner-name">Jugador 1</span> es el ganador!
+        </div>
+        <div id="final-score" class="final-score">
+            Resultado Final: <span id="final-score-player1">0</span> - <span id="final-score-player2">0</span>
+        </div>
+        <button id="new-tournament" class="start-button">Nuevo Torneo</button>
+    </div>
+
     <script src="js/game.js"></script>
 </body>
 </html>
