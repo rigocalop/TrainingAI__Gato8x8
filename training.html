@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrenamiento de IA para Gato 8x8</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        /* Estilos específicos para la visualización de entrenamiento */
+        .training-container {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .training-panel {
+            flex: 1;
+            min-width: 350px;
+            background-color: #f8f8f8;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .board-container {
+            width: 400px;
+            margin: 0 auto;
+        }
+
+        .metrics-container {
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .metric-box {
+            flex: 1;
+            min-width: 150px;
+            background-color: #fff;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            padding: 10px;
+            text-align: center;
+        }
+
+        .metric-title {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 200px;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .chart {
+            width: 100%;
+            height: 100%;
+            background-color: #fff;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-bar {
+            position: absolute;
+            bottom: 0;
+            width: 10px;
+            border-radius: 3px 3px 0 0;
+            background-color: #4a90e2;
+            transition: height 0.3s ease;
+        }
+
+        .training-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .training-button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #4a90e2;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .training-button:hover {
+            background-color: #3a7bc8;
+        }
+
+        .training-button.stop {
+            background-color: #e74c3c;
+        }
+
+        .training-button.stop:hover {
+            background-color: #c0392b;
+        }
+
+        .training-button.pause {
+            background-color: #f39c12;
+        }
+
+        .training-button.pause:hover {
+            background-color: #d68910;
+        }
+
+        .settings-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .settings-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .settings-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .settings-group select, 
+        .settings-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .game-history-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .agent-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .agent-box {
+            flex: 1;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .agent-box.model {
+            background-color: rgba(74, 144, 226, 0.1);
+            border: 1px solid rgba(74, 144, 226, 0.3);
+        }
+
+        .agent-box.opponent {
+            background-color: rgba(231, 76, 60, 0.1);
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+
+        .training-status {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .training-status.active {
+            background-color: rgba(46, 204, 113, 0.1);
+            color: #27ae60;
+        }
+
+        .training-status.paused {
+            background-color: rgba(243, 156, 18, 0.1);
+            color: #f39c12;
+        }
+
+        .training-status.stopped {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+        }
+
+        .log-container {
+            height: 150px;
+            overflow-y: auto;
+            background-color: #f1f1f1;
+            border-radius: 5px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            border-bottom: 1px solid #e1e1e1;
+            padding-bottom: 5px;
+        }
+
+        .log-entry.info {
+            color: #3498db;
+        }
+
+        .log-entry.success {
+            color: #2ecc71;
+        }
+
+        .log-entry.warning {
+            color: #f39c12;
+        }
+
+        .log-entry.error {
+            color: #e74c3c;
+        }
+
+        @media (max-width: 768px) {
+            .training-container {
+                flex-direction: column;
+            }
+
+            .training-panel {
+                width: 100%;
+            }
+
+            .board-container {
+                width: 100%;
+                max-width: 350px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Entrenamiento de IA para Gato 8x8</h1>
+        </header>
+
+        <main>
+            <div class="training-container">
+                <!-- Panel de Control de Entrenamiento -->
+                <div class="training-panel">
+                    <h2>Control de Entrenamiento</h2>
+                    
+                    <div class="training-status active" id="training-status">
+                        Entrenamiento en Progreso - Iteración <span id="current-iteration">1</span>/<span id="total-iterations">20</span>
+                    </div>
+                    
+                    <div class="settings-panel">
+                        <div class="settings-group">
+                            <label for="iterations">Iteraciones:</label>
+                            <input type="number" id="iterations" min="1" max="100" value="20">
+                        </div>
+                        
+                        <div class="settings-group">
+                            <label for="games-per-iteration">Juegos por Iteración:</label>
+                            <input type="number" id="games-per-iteration" min="1" max="50" value="10">
+                        </div>
+                        
+                        <div class="settings-group">
+                            <label for="opponent-type">Oponente:</label>
+                            <select id="opponent-type">
+                                <option value="random">Aleatorio</option>
+                                <option value="heuristic" selected>Heurístico</option>
+                                <option value="mixed">Mixto</option>
+                            </select>
+                        </div>
+                        
+                        <div class="settings-group">
+                            <label for="learning-rate">Tasa de Aprendizaje:</label>
+                            <input type="number" id="learning-rate" min="0.001" max="0.1" step="0.001" value="0.01">
+                        </div>
+                    </div>
+                    
+                    <div class="training-controls">
+                        <button id="start-training" class="training-button">Iniciar Entrenamiento</button>
+                        <button id="pause-training" class="training-button pause">Pausar</button>
+                        <button id="stop-training" class="training-button stop">Detener</button>
+                        <button id="reset-model" class="training-button">Reiniciar Modelo</button>
+                    </div>
+                    
+                    <div class="metrics-container">
+                        <div class="metric-box">
+                            <div class="metric-title">Tasa de Victoria</div>
+                            <div class="metric-value" id="win-rate">0%</div>
+                        </div>
+                        
+                        <div class="metric-box">
+                            <div class="metric-title">Pérdida de Política</div>
+                            <div class="metric-value" id="policy-loss">0.00</div>
+                        </div>
+                        
+                        <div class="metric-box">
+                            <div class="metric-title">Pérdida de Valor</div>
+                            <div class="metric-value" id="value-loss">0.00</div>
+                        </div>
+                        
+                        <div class="metric-box">
+                            <div class="metric-title">Juegos Completados</div>
+                            <div class="metric-value" id="completed-games">0</div>
+                        </div>
+                    </div>
+                    
+                    <h3>Registro de Actividad</h3>
+                    <div class="log-container" id="training-log">
+                        <div class="log-entry info">Esperando inicio del entrenamiento...</div>
+                    </div>
+                </div>
+                
+                <!-- Panel de Visualización de Entrenamiento -->
+                <div class="training-panel">
+                    <h2>Visualización de Entrenamiento</h2>
+                    
+                    <div class="agent-stats">
+                        <div class="agent-box model">
+                            <h3>Modelo IA</h3>
+                            <div>Victorias: <span id="model-wins">0</span></div>
+                            <div>Derrotas: <span id="model-losses">0</span></div>
+                            <div>Empates: <span id="model-draws">0</span></div>
+                        </div>
+                        
+                        <div class="agent-box opponent">
+                            <h3>Oponente</h3>
+                            <div>Victorias: <span id="opponent-wins">0</span></div>
+                            <div>Derrotas: <span id="opponent-losses">0</span></div>
+                            <div>Empates: <span id="opponent-draws">0</span></div>
+                        </div>
+                    </div>
+                    
+                    <h3>Tasa de Victoria por Iteración</h3>
+                    <div class="chart-container">
+                        <div class="chart" id="win-rate-chart">
+                            <!-- Las barras se agregarán dinámicamente con JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <h3>Pérdida de Entrenamiento</h3>
+                    <div class="chart-container">
+                        <div class="chart" id="loss-chart">
+                            <!-- Las líneas se agregarán dinámicamente con JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <h3>Último Juego</h3>
+                    <div class="board-container">
+                        <div class="game-board-container">
+                            <div class="coordinates" id="column-coordinates"></div>
+                            <div class="coordinates" id="row-coordinates"></div>
+                            <div class="game-board" id="training-board"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Panel de Historial y Análisis -->
+                <div class="training-panel">
+                    <h2>Historial y Análisis</h2>
+                    
+                    <h3>Historial de Partidas</h3>
+                    <div class="game-history-container">
+                        <div class="match-history-list" id="training-history-list">
+                            <!-- El historial se agregará dinámicamente -->
+                            <div class="no-moves-message">Aún no hay partidas registradas</div>
+                        </div>
+                    </div>
+                    
+                    <h3>Análisis del Modelo</h3>
+                    <div class="metrics-container">
+                        <div class="metric-box">
+                            <div class="metric-title">Precisión de Movimiento</div>
+                            <div class="metric-value" id="move-accuracy">0%</div>
+                        </div>
+                        
+                        <div class="metric-box">
+                            <div class="metric-title">Promedio de Movimientos</div>
+                            <div class="metric-value" id="avg-moves">0</div>
+                        </div>
+                        
+                        <div class="metric-box">
+                            <div class="metric-title">Mejor Resultado</div>
+                            <div class="metric-value" id="best-result">-</div>
+                        </div>
+                    </div>
+                    
+                    <div class="training-controls">
+                        <button id="export-model" class="training-button">Exportar Modelo</button>
+                        <button id="import-model" class="training-button">Importar Modelo</button>
+                        <button id="play-against-model" class="training-button">Jugar contra el Modelo</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 - Entrenamiento de IA para Gato 8x8</p>
+            <nav>
+                <a href="index.html">Jugar</a> | 
+                <a href="training.html" class="active">Entrenamiento</a>
+            </nav>
+        </footer>
+    </div>
+
+    <script src="js/training.js"></script>
+</body>
+</html>
