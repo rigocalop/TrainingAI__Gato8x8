@@ -43,7 +43,7 @@ h2 {
 }
 
 /* Common button styles */
-.reset-button, .start-button {
+.reset-button, .start-button, .abort-button {
     background-color: var(--primary-color);
     color: white;
     border: none;
@@ -56,6 +56,20 @@ h2 {
 
 .reset-button:hover, .start-button:hover {
     background-color: #2980b9;
+}
+
+.abort-button {
+    background-color: #e74c3c;
+}
+
+.abort-button:hover {
+    background-color: #c0392b;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
 }
 
 .start-button {
@@ -94,7 +108,8 @@ h2 {
     color: #2c3e50;
 }
 
-.form-group input {
+.form-group input,
+.form-group select {
     width: 100%;
     padding: 10px;
     border: 1px solid var(--border-color);
@@ -179,8 +194,8 @@ h2 {
 
 .game-info {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    gap: 15px;
     margin-bottom: 20px;
 }
 
@@ -423,6 +438,42 @@ h2 {
     .stats-grid {
         grid-template-columns: 1fr;
     }
+}
+
+/* Additional elements */
+.secondary-links {
+    margin-top: 15px;
+    text-align: center;
+}
+
+.training-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s;
+}
+
+.training-link:hover {
+    color: #2980b9;
+    text-decoration: underline;
+}
+
+.ai-badge {
+    background-color: #9b59b6;
+    color: white;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    margin-left: 5px;
+    font-weight: bold;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    animation: ai-pulse 2s infinite;
+}
+
+@keyframes ai-pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.8; }
+    100% { opacity: 1; }
 }
 
 /* Utility classes */

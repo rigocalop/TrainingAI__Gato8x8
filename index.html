@@ -14,6 +14,14 @@
 
         <div class="setup-form">
             <div class="form-group">
+                <label for="game-mode">Modo de Juego:</label>
+                <select id="game-mode">
+                    <option value="two-players" selected>Dos Jugadores</option>
+                    <option value="vs-ai">Jugar contra la IA</option>
+                </select>
+            </div>
+
+            <div class="form-group">
                 <label for="player1-name">Nombre Jugador 1 (X):</label>
                 <input type="text" id="player1-name" value="Jugador 1" maxlength="20">
             </div>
@@ -23,12 +31,25 @@
                 <input type="text" id="player2-name" value="Jugador 2" maxlength="20">
             </div>
 
+            <div class="form-group ai-settings" style="display: none;">
+                <label for="ai-difficulty">Dificultad de la IA:</label>
+                <select id="ai-difficulty">
+                    <option value="easy">Fácil</option>
+                    <option value="medium" selected>Media</option>
+                    <option value="hard">Difícil</option>
+                    <option value="expert">Experto</option>
+                </select>
+            </div>
+
             <div class="form-group">
                 <label for="matches-to-win">Partidas para ganar:</label>
                 <input type="number" id="matches-to-win" min="1" max="10" value="3">
             </div>
 
             <button id="start-game" class="start-button">¡Comenzar Juego!</button>
+            <div class="secondary-links">
+                <a href="training.html" class="training-link">Ir a Entrenamiento de IA</a>
+            </div>
         </div>
     </div>
 
@@ -54,7 +75,10 @@
                 <div class="game-info">
                     <div id="move-counter" class="move-counter">Movimientos: 0</div>
                     <div id="player-turn" class="player-turn">Turno: <span id="current-player-name">Jugador 1</span> (X)</div>
-                    <button id="reset-button" class="reset-button">Reiniciar Partida</button>
+                    <div class="button-group">
+                        <button id="reset-button" class="reset-button">Reiniciar Partida</button>
+                        <button id="abort-button" class="abort-button">Abortar Juego</button>
+                    </div>
                 </div>
 
                 <div class="game-board-container">
@@ -104,6 +128,7 @@
         <button id="new-tournament" class="start-button">Nuevo Torneo</button>
     </div>
 
+    <script src="js/ai_model.js"></script>
     <script src="js/game.js"></script>
 </body>
 </html>

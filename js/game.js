@@ -1,11 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements - Setup Screen
     const setupScreen = document.getElementById('setup-screen');
+    const gameModeSelect = document.getElementById('game-mode');
     const player1NameInput = document.getElementById('player1-name');
     const player2NameInput = document.getElementById('player2-name');
+    const aiSettingsGroup = document.querySelector('.ai-settings');
+    const aiDifficultySelect = document.getElementById('ai-difficulty');
     const matchesToWinInput = document.getElementById('matches-to-win');
     const startGameButton = document.getElementById('start-game');
-    
+
     // DOM Elements - Game Screen
     const gameScreen = document.getElementById('game-screen');
     const gameBoard = document.getElementById('game-board');
@@ -13,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentPlayerName = document.getElementById('current-player-name');
     const gameResultDisplay = document.getElementById('game-result');
     const resetButton = document.getElementById('reset-button');
+    const abortButton = document.getElementById('abort-button');
     const moveCounter = document.getElementById('move-counter');
     const player1NameDisplay = document.getElementById('player1-name-display');
     const player2NameDisplay = document.getElementById('player2-name-display');
@@ -22,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalMatchesDisplay = document.getElementById('total-matches');
     const liveHistoryList = document.getElementById('live-history-list');
     const currentMovesCount = document.getElementById('current-moves-count');
-    
+
     // DOM Elements - Tournament Result Screen
     const tournamentResultScreen = document.getElementById('tournament-result');
     const tournamentWinnerName = document.getElementById('tournament-winner-name');
@@ -32,19 +36,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalMovesDisplay = document.getElementById('total-moves');
     const averageMovesDisplay = document.getElementById('average-moves');
     const newTournamentButton = document.getElementById('new-tournament');
-    
+
     // Game model constants
     const BOARD_SIZE = 8;
     const CELLS_TO_WIN = 4;
     const PLAYER_X = 'x';
     const PLAYER_O = 'o';
-    
+
     // Game state
     let board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(''));
     let currentPlayer = PLAYER_X;
     let gameActive = false;
     let moveCount = 0;
-    
+
     // Player and Tournament state
     let player1Name = 'Jugador 1';
     let player2Name = 'Jugador 2';
@@ -54,19 +58,38 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentMatch = 1;
     let tournamentActive = false;
     let tournamentId = null;
-    
+    let gameMode = 'two-players'; // 'two-players' o 'vs-ai'
+    let aiDifficulty = 'medium'; // 'easy', 'medium', 'hard', 'expert'
+    let aiIsThinking = false; // Para controlar si la IA está "pensando"
+    let aiModel = null; // Modelo de IA para tomar decisiones
+
     // Match history
     let matchHistory = [];
     let liveHistory = []; // Para el historial en tiempo real
     let playerStats = {}; // Estadísticas de jugadores
-    
+
     // Setup game event listeners
+    gameModeSelect.addEventListener('change', toggleAISettings);
     startGameButton.addEventListener('click', startTournament);
     resetButton.addEventListener('click', resetMatch);
+    abortButton.addEventListener('click', abortGame);
     newTournamentButton.addEventListener('click', showSetupScreen);
-    
+
     // Show setup screen initially
     showSetupScreen();
+
+    // Toggle AI settings based on game mode
+    function toggleAISettings() {
+        if (gameModeSelect.value === 'vs-ai') {
+            aiSettingsGroup.style.display = 'block';
+            player2NameInput.value = 'IA';
+            player2NameInput.disabled = true;
+        } else {
+            aiSettingsGroup.style.display = 'none';
+            player2NameInput.value = 'Jugador 2';
+            player2NameInput.disabled = false;
+        }
+    }
     
     // Function to show setup screen
     function showSetupScreen() {
@@ -189,12 +212,30 @@ document.addEventListener('DOMContentLoaded', () => {
     function startTournament() {
         // Generate a unique tournament ID
         tournamentId = generateUniqueId();
-        
+
+        // Get game mode and settings
+        gameMode = gameModeSelect.value;
+        aiDifficulty = aiDifficultySelect.value;
+
+        // Initialize AI model if playing against AI
+        if (gameMode === 'vs-ai') {
+            // Create AI model based on difficulty
+            aiModel = createAIModel(aiDifficulty);
+        } else {
+            aiModel = null;
+        }
+
         // Get player names and matches to win
         player1Name = player1NameInput.value.trim() || 'Jugador 1';
-        player2Name = player2NameInput.value.trim() || 'Jugador 2';
+
+        if (gameMode === 'vs-ai') {
+            player2Name = 'IA';
+        } else {
+            player2Name = player2NameInput.value.trim() || 'Jugador 2';
+        }
+
         matchesToWin = parseInt(matchesToWinInput.value) || 3;
-        
+
         // Initialize player statistics
         playerStats = {
             [player1Name]: {
@@ -214,23 +255,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 avgMovesPerWin: 0
             }
         };
-        
+
         // Update displays
         player1NameDisplay.textContent = player1Name;
-        player2NameDisplay.textContent = player2Name;
+
+        if (gameMode === 'vs-ai') {
+            player2NameDisplay.innerHTML = player2Name + ' <span class="ai-badge">IA</span>';
+        } else {
+            player2NameDisplay.textContent = player2Name;
+        }
+
         player1WinsDisplay.textContent = player1Wins;
         player2WinsDisplay.textContent = player2Wins;
         currentMatchDisplay.textContent = currentMatch;
         totalMatchesDisplay.textContent = matchesToWin * 2 - 1; // Max possible matches
-        
+
         // Switch screens
         setupScreen.classList.add('hidden');
         gameScreen.classList.remove('hidden');
         tournamentResultScreen.classList.add('hidden');
-        
+
         // Start first match
         tournamentActive = true;
         startMatch();
+    }
+
+    // Function to abort the current game
+    function abortGame() {
+        if (confirm('¿Estás seguro de que quieres abortar el juego actual?')) {
+            tournamentActive = false;
+            gameActive = false;
+            showSetupScreen();
+        }
     }
     
     // Function to start a new match
@@ -241,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
         moveCount = 0;
         gameActive = true;
         liveHistory = []; // Limpiar historial en vivo
-        
+
         // Update UI
         moveCounter.textContent = `Movimientos: ${moveCount}`;
         currentMovesCount.textContent = moveCount;
@@ -249,6 +305,15 @@ document.addEventListener('DOMContentLoaded', () => {
         gameResultDisplay.textContent = '';
         createBoard();
         updateLiveHistory(); // Actualizar el historial en vivo
+
+        // If it's AI's turn to start, make first move after a short delay
+        if (gameMode === 'vs-ai' && currentPlayer === PLAYER_O) {
+            aiIsThinking = true;
+            setTimeout(() => {
+                makeAIMove();
+                aiIsThinking = false;
+            }, getAIThinkingTime());
+        }
     }
     
     // Reset current match
@@ -308,18 +373,42 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handle cell click
     function handleCellClick(row, col) {
         // If game is not active or cell is already taken, do nothing
-        if (!gameActive || board[row][col] !== '') {
+        if (!gameActive || board[row][col] !== '' || aiIsThinking) {
             return;
         }
-        
+
+        // If playing against AI, only allow clicks when it's player's turn
+        if (gameMode === 'vs-ai') {
+            const playerPiece = PLAYER_X; // Human always plays as X
+            if (currentPlayer !== playerPiece) {
+                return; // Not player's turn
+            }
+        }
+
+        // Make the move
+        makeMove(row, col);
+
+        // If playing against AI and game is still active, make AI move
+        if (gameMode === 'vs-ai' && gameActive && currentPlayer === PLAYER_O) {
+            // Add slight delay to simulate "thinking"
+            aiIsThinking = true;
+            setTimeout(() => {
+                makeAIMove();
+                aiIsThinking = false;
+            }, getAIThinkingTime());
+        }
+    }
+
+    // Make a move at the specified position
+    function makeMove(row, col) {
         // Update the board model
         board[row][col] = currentPlayer;
         moveCount++;
-        
+
         // Get algebraic notation for this move
         const algebraicNotation = getAlgebraicNotation(row, col);
-        
-        // Registrar el movimiento en el historial en vivo
+
+        // Register the move in live history
         const moveEntry = {
             player: currentPlayer,
             playerName: currentPlayer === PLAYER_X ? player1Name : player2Name,
@@ -329,13 +418,13 @@ document.addEventListener('DOMContentLoaded', () => {
             timestamp: new Date().toISOString()
         };
         liveHistory.push(moveEntry);
-        
+
         // Update the UI
         updateCellUI(row, col);
         moveCounter.textContent = `Movimientos: ${moveCount}`;
         currentMovesCount.textContent = moveCount;
         updateLiveHistory();
-        
+
         // Check for win or draw
         if (checkWin(row, col)) {
             endMatch(false, moveCount);
@@ -345,6 +434,214 @@ document.addEventListener('DOMContentLoaded', () => {
             // Switch player
             currentPlayer = currentPlayer === PLAYER_X ? PLAYER_O : PLAYER_X;
             updatePlayerTurn();
+        }
+    }
+
+    // Make an AI move based on difficulty
+    function makeAIMove() {
+        if (!gameActive) return;
+
+        // Find a move based on difficulty
+        const aiMove = findAIMove();
+
+        // Make the move
+        if (aiMove) {
+            makeMove(aiMove.row, aiMove.col);
+        }
+    }
+
+    // Find the best move for AI based on difficulty
+    function findAIMove() {
+        // Use the AI model if available
+        if (aiModel) {
+            // Convert game board to format expected by AI model
+            // Our board uses strings ('', 'x', 'o') but the AI model expects numbers (0, 1, 2)
+            const modelBoard = board.map(row =>
+                row.map(cell => {
+                    if (cell === '') return 0;      // Empty
+                    if (cell === PLAYER_X) return 1; // X
+                    if (cell === PLAYER_O) return 2; // O
+                    return 0;                       // Default to empty
+                })
+            );
+
+            // Current player for the AI (always O)
+            const modelPlayer = 2; // PLAYER_O
+
+            // Get move from AI model
+            const predictedMove = aiModel.predictMove(modelBoard, modelPlayer);
+
+            if (predictedMove) {
+                return predictedMove;
+            }
+        }
+
+        // Fallback to the original strategy if AI model fails or is not available
+        // Get available moves
+        const availableMoves = [];
+        for (let r = 0; r < BOARD_SIZE; r++) {
+            for (let c = 0; c < BOARD_SIZE; c++) {
+                if (board[r][c] === '') {
+                    availableMoves.push({ row: r, col: c });
+                }
+            }
+        }
+
+        if (availableMoves.length === 0) return null;
+
+        // Different strategies based on difficulty
+        switch (aiDifficulty) {
+            case 'easy':
+                // Random move
+                return availableMoves[Math.floor(Math.random() * availableMoves.length)];
+
+            case 'medium':
+                // Smarter moves
+                // First, look for winning move
+                const winningMove = findWinningMove(PLAYER_O);
+                if (winningMove) return winningMove;
+
+                // Second, block opponent's winning move
+                const blockingMove = findWinningMove(PLAYER_X);
+                if (blockingMove) return blockingMove;
+
+                // Third, prefer center region
+                const centerMoves = availableMoves.filter(move =>
+                    (move.row >= 2 && move.row <= 5 && move.col >= 2 && move.col <= 5)
+                );
+
+                if (centerMoves.length > 0) {
+                    return centerMoves[Math.floor(Math.random() * centerMoves.length)];
+                }
+
+                // Otherwise, random move
+                return availableMoves[Math.floor(Math.random() * availableMoves.length)];
+
+            case 'hard':
+            case 'expert': // Added expert difficulty
+                // Very smart moves
+                // First, look for winning move
+                const immediateWin = findWinningMove(PLAYER_O);
+                if (immediateWin) return immediateWin;
+
+                // Block opponent's winning move
+                const immediateBlock = findWinningMove(PLAYER_X);
+                if (immediateBlock) return immediateBlock;
+
+                // Look for two-in-a-row to extend
+                const goodMove = findGoodMove();
+                if (goodMove) return goodMove;
+
+                // Prefer center region
+                const strategicMoves = availableMoves.filter(move =>
+                    (move.row >= 2 && move.row <= 5 && move.col >= 2 && move.col <= 5)
+                );
+
+                if (strategicMoves.length > 0) {
+                    return strategicMoves[Math.floor(Math.random() * strategicMoves.length)];
+                }
+
+                // Otherwise, random move
+                return availableMoves[Math.floor(Math.random() * availableMoves.length)];
+
+            default:
+                return availableMoves[Math.floor(Math.random() * availableMoves.length)];
+        }
+    }
+
+    // Find a winning move for the given player
+    function findWinningMove(player) {
+        // Try each empty cell
+        for (let r = 0; r < BOARD_SIZE; r++) {
+            for (let c = 0; c < BOARD_SIZE; c++) {
+                if (board[r][c] === '') {
+                    // Try this move
+                    board[r][c] = player;
+
+                    // Check if it's a winning move
+                    const isWin = checkWin(r, c);
+
+                    // Undo move
+                    board[r][c] = '';
+
+                    if (isWin) {
+                        return { row: r, col: c };
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    // Find a good move (look for two in a row)
+    function findGoodMove() {
+        // Strategies to improve chances of winning
+        const player = PLAYER_O; // AI is always O
+
+        // Check for potential winning setups (2 in a row with space on both sides)
+        for (let r = 0; r < BOARD_SIZE; r++) {
+            for (let c = 0; c < BOARD_SIZE; c++) {
+                if (board[r][c] !== player) continue;
+
+                // Check all 8 directions
+                const directions = [
+                    [0, 1],   // right
+                    [1, 0],   // down
+                    [1, 1],   // down-right
+                    [1, -1],  // down-left
+                    [0, -1],  // left
+                    [-1, 0],  // up
+                    [-1, -1], // up-left
+                    [-1, 1]   // up-right
+                ];
+
+                for (const [dr, dc] of directions) {
+                    // Check if there's already a piece of the same type in this direction
+                    let count = 1;
+                    let emptyAfter = null;
+
+                    // Check in the direction
+                    let r2 = r + dr;
+                    let c2 = c + dc;
+
+                    while (r2 >= 0 && r2 < BOARD_SIZE && c2 >= 0 && c2 < BOARD_SIZE) {
+                        if (board[r2][c2] === player) {
+                            count++;
+                            r2 += dr;
+                            c2 += dc;
+                        } else if (board[r2][c2] === '') {
+                            emptyAfter = { row: r2, col: c2 };
+                            break;
+                        } else {
+                            break;
+                        }
+                    }
+
+                    // If we found 2 in a row and an empty space after, that's a good move
+                    if (count >= 2 && emptyAfter) {
+                        return emptyAfter;
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    // Get AI thinking time based on difficulty
+    function getAIThinkingTime() {
+        switch (aiDifficulty) {
+            case 'easy':
+                return 500 + Math.random() * 500; // 0.5-1s
+            case 'medium':
+                return 700 + Math.random() * 800; // 0.7-1.5s
+            case 'hard':
+                return 1000 + Math.random() * 1000; // 1-2s
+            case 'expert':
+                return 1200 + Math.random() * 1200; // 1.2-2.4s (expert takes longer to "think")
+            default:
+                return 800;
         }
     }
     
